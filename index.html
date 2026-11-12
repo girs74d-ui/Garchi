@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#173f35">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>غَرْسة | وقتك ينمو</title>
+<style>
+:root{--bg:#f3f6ef;--card:#fff;--ink:#173f35;--muted:#718078;--green:#2e7658;--pale:#e4efe5;--gold:#e6bd62}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+main{max-width:480px;margin:auto;padding:22px 16px 34px}
+header{text-align:center;padding:12px 0 8px}h1{font-size:30px;margin:0 0 4px;letter-spacing:.5px}header p{margin:0;color:var(--muted);font-size:14px}
+.card{background:var(--card);border-radius:24px;padding:20px;margin:14px 0;box-shadow:0 8px 28px #173f350d}
+.treebox{height:230px;display:grid;place-items:center;background:linear-gradient(#f5faf5,#e9f2e8);border-radius:20px;overflow:hidden;position:relative}
+svg{width:190px;height:205px;overflow:visible}.tree-leaves{transform-origin:100px 145px;transition:transform .5s ease}
+.timer{text-align:center;font-size:48px;font-weight:750;letter-spacing:1px;margin:15px 0 5px;font-variant-numeric:tabular-nums}
+.status{text-align:center;color:var(--muted);font-size:14px;min-height:22px}
+.progress{height:9px;background:#e7eee8;border-radius:20px;overflow:hidden;margin:17px 0 12px}.bar{height:100%;width:0;background:var(--green);border-radius:20px;transition:width .4s}
+.row{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}.dur button,.actions button{border:0;border-radius:14px;padding:12px 17px;font:inherit;font-weight:650;cursor:pointer}
+.dur button{background:#edf3ed;color:var(--ink)}.dur button.active{background:var(--ink);color:white}
+.actions{margin-top:17px}.actions button{min-width:112px;background:var(--green);color:#fff}.actions button.secondary{background:#edf3ed;color:var(--ink)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stat{background:#f5f8f4;border-radius:17px;padding:14px;text-align:center}.stat strong{display:block;font-size:25px}.stat span{color:var(--muted);font-size:13px}
+.forest-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.forest-title h2{font-size:18px;margin:0}.forest{min-height:60px;display:flex;flex-wrap:wrap;gap:5px;align-items:center}.mini{font-size:26px}.empty{color:var(--muted);font-size:13px}
+.note{text-align:center;color:var(--muted);font-size:12px;margin:18px 8px}
+</style>
+</head>
+<body>
+<main>
+<header><h1>غَرْسة 🌱</h1><p>ازرع وقتك... واحصد إنجازك</p></header>
+<section class="card">
+  <div class="treebox">
+    <svg viewBox="0 0 200 220" role="img" aria-label="شجرة تنمو مع تقدم جلسة الدراسة">
+      <ellipse cx="100" cy="198" rx="64" ry="9" fill="#d5e5d3"/>
+      <path d="M96 195 C91 165 105 143 99 112 C98 103 96 96 100 86" fill="none" stroke="#8b5a36" stroke-width="12" stroke-linecap="round"/>
+      <path d="M99 137 Q72 120 60 103 M101 128 Q126 110 139 91" fill="none" stroke="#8b5a36" stroke-width="7" stroke-linecap="round"/>
+      <g class="tree-leaves" id="leaves">
+        <circle cx="100" cy="74" r="0" fill="#3d8b5d" id="c1"/>
+        <circle cx="72" cy="96" r="0" fill="#4c9a68" id="c2"/>
+        <circle cx="128" cy="96" r="0" fill="#347e54" id="c3"/>
+        <circle cx="100" cy="112" r="0" fill="#62a976" id="c4"/>
+        <circle cx="100" cy="48" r="0" fill="#2e7658" id="c5"/>
+      </g>
+    </svg>
+  </div>
+  <div class="timer" id="timer">25:00</div>
+  <div class="status" id="status">اختر مدة الجلسة ثم ابدأ</div>
+  <div class="progress"><div class="bar" id="bar"></div></div>
+  <div class="row dur">
+    <button class="active" data-min="25">25 دقيقة</button><button data-min="45">45 دقيقة</button><button data-min="60">60 دقيقة</button>
+  </div>
+  <div class="row actions">
+    <button id="start">ابدأ الدراسة</button><button class="secondary" id="reset">إعادة</button>
+  </div>
+</section>
+<section class="card stats">
+  <div class="stat"><strong id="sessions">0</strong><span>جلسات مكتملة</span></div>
+  <div class="stat"><strong id="minutes">0</strong><span>دقيقة دراسة</span></div>
+</section>
+<section class="card">
+  <div class="forest-title"><h2>غابتي</h2><span>🌳</span></div>
+  <div class="forest" id="forest"><span class="empty">ستظهر أشجارك هنا بعد إكمال أول جلسة.</span></div>
+</section>
+<p class="note">نصيحة: ابدأ بجلسة واحدة. لا تحتاج إلى الكمال؛ فقط ازرع أول غرسة اليوم.</p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let selected=25,total=1500,left=1500,running=false,interval=null,done=+(localStorage.gDone||0),mins=+(localStorage.gMins||0);
+function paint(){
+ $('timer').textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');
+ const p=1-left/total;$('bar').style.width=(p*100)+'%';
+ const r=8+p*32;['c1','c2','c3','c4','c5'].forEach((id,i)=>$(id).setAttribute('r',Math.max(0,r-(i%2)*5)));
+ $('leaves').style.transform=`scale(${.65+p*.35})`;
+ $('sessions').textContent=done;$('minutes').textContent=mins;
+ $('forest').innerHTML=done?Array.from({length:Math.min(done,60)},()=>'<span class="mini">🌳</span>').join('')+(done>60?`<span class="empty">+${done-60}</span>`:''):'<span class="empty">ستظهر أشجارك هنا بعد إكمال أول جلسة.</span>';
+}
+function stop(){running=false;clearInterval(interval);interval=null;$('start').textContent='استئناف';}
+function tick(){if(left>0){left--;paint();}else{stop();done++;mins+=selected;localStorage.gDone=done;localStorage.gMins=mins;$('status').textContent='أحسنت! اكتملت جلستك ونمت شجرة جديدة 🌳';$('start').textContent='ابدأ جلسة جديدة';paint();}}
+$('start').onclick=()=>{if(running){stop();$('status').textContent='الجلسة متوقفة مؤقتاً';return;}if(left===0){left=selected*60;total=left;}$('status').textContent='ركز على دراستك... شجرتك تنمو';running=true;$('start').textContent='إيقاف مؤقت';interval=setInterval(tick,1000);};
+$('reset').onclick=()=>{stop();left=selected*60;total=left;$('status').textContent='اختر لحظتك وابدأ من جديد';$('start').textContent='ابدأ الدراسة';paint();};
+document.querySelectorAll('.dur button').forEach(b=>b.onclick=()=>{if(running)return;document.querySelectorAll('.dur button').forEach(x=>x.classList.remove('active'));b.classList.add('active');selected=+b.dataset.min;left=total=selected*60;$('start').textContent='ابدأ الدراسة';$('status').textContent='اختر مدة الجلسة ثم ابدأ';paint();});
+paint();
+</script>
+<script>if ("serviceWorker" in navigator) { window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{})); }</script>
+</body></html>
